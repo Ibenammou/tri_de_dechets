@@ -22,6 +22,7 @@ le système de tri des déchets est une maquette de système automatisé qui uti
 - ahmad berket
 - ky boris malgoire
 - mohamed
+- fatima-ezahrae
 
 ## matériel
 
