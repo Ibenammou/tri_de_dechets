@@ -1,29 +1,31 @@
-# SYSTÈME DE TRI DES DÉCHETS
+# système de tri des déchets
 
-BIENVENUE DANS LE PROJET SYSTÈME DE TRI DES DÉCHETS, UNE SOLUTION INTELLIGENTE DE TRI DES DÉCHETS.
+bienvenue dans le projet système de tri des déchets, une solution intelligente de tri des déchets.
 
-## DESCRIPTION
+## description
 
-LE SYSTÈME DE TRI DES DÉCHETS EST UNE MAQUETTE DE SYSTÈME AUTOMATISÉ QUI UTILISE DES CAPTEURS DE MOUVEMENT PIR, DES CAMÉRAS ESP8266-CAM, DES SERVOMOTEURS ET TENSORFLOW POUR OPTIMISER LE PROCESSUS DE TRI DES DÉCHETS.
+le système de tri des déchets est une maquette de système automatisé qui utilise des capteurs de mouvement pir, des caméras esp8266-cam, des servomoteurs et tensorflow pour optimiser le processus de tri des déchets.
 
-## FONCTIONNALITÉS
+## fonctionnalités
 
-- DÉTECTION AUTOMATIQUE DES DÉCHETS À L'AIDE DE CAPTEURS PIR.
-- CAPTURE D'IMAGES AVEC LES CAMÉRAS ESP8266-CAM.
-- CLASSIFICATION DES DÉCHETS GRÂCE À TENSORFLOW.
-- TRI AUTOMATISÉ DANS LES POUBELLES DÉDIÉES PAR L'INTERMÉDIAIRE DE SERVOMOTEURS.
-## CONTRIBUTEURS
+- détection automatique des déchets à l'aide de capteurs pir.
+- capture d'images avec les caméras esp8266-cam.
+- classification des déchets grâce à tensorflow.
+- tri automatisé dans les poubelles dédiées par l'intermédiaire de servomoteurs.
 
-- IMANE BENAMMOU
-- SOUMIA AZELMAT
-- AHMAD BERKET
-- KY BORIS MALGOIRE
+## contributeurs
+
 - yousra
+-  imane benammou
+- soumia azelmat
+- ahmad berket
+- ky boris malgoire
 - mohamed
-## MATÉRIEL
 
-- ESP8266-CAM pour la capture d'images.
-- Capteurs de mouvement PIR pour la détection automatique des déchets.
-- Servomoteurs pour le mouvement et le tri automatisé.
-- TensorFlow pour la classification des déchets.
-- Carte SD pour le stockage des images capturées.
+## matériel
+
+- esp8266-cam pour la capture d'images.
+- capteurs de mouvement pir pour la détection automatique des déchets.
+- servomoteurs pour le mouvement et le tri automatisé.
+- tensorflow pour la classification des déchets.
+- carte sd pour le stockage des images capturées.
