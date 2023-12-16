@@ -5,7 +5,7 @@
 
 // WiFi credentials
 const char* ssid = "TRI_DECHETS";
-const char* password = "IMANE123";
+const char* password = "123";
 
 // Create a web server on port 80
 WiFiServer server(80);
