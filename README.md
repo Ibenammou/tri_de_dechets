@@ -1,16 +1,16 @@
-Système de Tri des Déchets
-Bienvenue dans le projet Système de Tri des Déchets, une solution intelligente de tri des déchets.
+#SYSTÈME DE TRI DES DÉCHETS
+BIENVENUE DANS LE PROJET SYSTÈME DE TRI DES DÉCHETS, UNE SOLUTION INTELLIGENTE DE TRI DES DÉCHETS.
 
-Description
-Le Système de Tri des Déchets est une maquette de système automatisé qui utilise des capteurs de mouvement PIR, des caméras ESP8266-CAM, des servomoteurs et TensorFlow pour optimiser le processus de tri des déchets.
+#DESCRIPTION
+LE SYSTÈME DE TRI DES DÉCHETS EST UNE MAQUETTE DE SYSTÈME AUTOMATISÉ QUI UTILISE DES CAPTEURS DE MOUVEMENT PIR, DES CAMÉRAS ESP8266-CAM, DES SERVOMOTEURS ET TENSORFLOW POUR OPTIMISER LE PROCESSUS DE TRI DES DÉCHETS.
 
-Contributeurs
-Imane Benammou
-Soumia Azelmat
-Ahmad Berket
-Ky Boris Malgoire
-Fonctionnalités
-Détection automatique des déchets à l'aide de capteurs PIR.
-Capture d'images avec les caméras ESP8266-CAM.
-Classification des déchets grâce à TensorFlow.
-Tri automatisé dans les poubelles dédiées par l'intermédiaire de servomoteurs.
+#CONTRIBUTEURS
+IMANE BENAMMOU
+SOUMIA AZELMAT
+AHMAD BERKET
+KY BORIS MALGOIRE
+#FONCTIONNALITÉS
+DÉTECTION AUTOMATIQUE DES DÉCHETS À L'AIDE DE CAPTEURS PIR.
+CAPTURE D'IMAGES AVEC LES CAMÉRAS ESP8266-CAM.
+CLASSIFICATION DES DÉCHETS GRÂCE À TENSORFLOW.
+TRI AUTOMATISÉ DANS LES POUBELLES DÉDIÉES PAR L'INTERMÉDIAIRE DE SERVOMOTEURS.
