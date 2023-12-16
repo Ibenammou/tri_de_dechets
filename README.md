@@ -1,6 +1,7 @@
 # système de tri des déchets
 
 bienvenue dans le projet système de tri des déchets, une solution intelligente de tri des déchets.
+![Aperçu du Projet](https://th.bing.com/th/id/OIP.IL-nWMzu2QkJekf6FBB6hgHaFj?rs=1&pid=ImgDetMain)
 
 ## description
 
