@@ -20,7 +20,7 @@ le système de tri des déchets est une maquette de système automatisé qui uti
 -  imane benammou
 - soumia azelmat
 - ahmad berket
-- ky boris malgoire
+- ky boris magloire
 - mohamed
 - fatimazahra benhadine
 
