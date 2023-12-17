@@ -1,11 +1,11 @@
 # système de tri des déchets
 
-bienvenue dans le projet système de tri des déchets, une solution intelligente de tri des déchets.
+Bienvenue dans le projet système de tri des déchets, une solution intelligente de tri des déchets.
 ![Aperçu du Projet](https://th.bing.com/th/id/OIP.IL-nWMzu2QkJekf6FBB6hgHaFj?rs=1&pid=ImgDetMain)
 
-## description
+## Description
 
-le système de tri des déchets est une maquette de système automatisé qui utilise des capteurs de mouvement pir, des caméras esp8266-cam, des servomoteurs et tensorflow pour optimiser le processus de tri des déchets.
+Le système de tri des déchets est une maquette de système automatisé qui utilise des capteurs de mouvement pir, des caméras esp8266-cam, des servomoteurs et tensorflow pour optimiser le processus de tri des déchets.
 
 ## fonctionnalités
 
@@ -16,13 +16,13 @@ le système de tri des déchets est une maquette de système automatisé qui uti
 
 ## contributeurs
 
-- yousra
--  imane benammou
-- soumia azelmat
-- ahmad berket
-- ky boris magloire
-- mohamed
-- fatimazahra benhadine
+- Yousra
+-  Imane Benammou
+- Soumia Azelmat
+- Ahmad Berket
+- Ky Boris Magloire
+- Mohamed
+- Fatimazahra Benhadine
 
 ## matériel
 
