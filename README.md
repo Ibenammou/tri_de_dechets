@@ -1,7 +1,7 @@
 # système de tri des déchets
 
 Bienvenue dans le projet système de tri des déchets, une solution intelligente de tri des déchets.
-![Aperçu du Projet](https://i.imgur.com/CeuRiSf.jpeg)
+![Aperçu du Projet](https://github.com/Ibenammou/tri_de_dechets/blob/master/pic%20of%20maq.jpg)
 
 ## Description
 
