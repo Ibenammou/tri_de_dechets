@@ -8,4 +8,8 @@ NB: khask tchofi l username dyal pc dyalk o tbdli dik Windownet//
 2-C:\Users\Windownet\AppData\Local\Programs\Python\Python39\python.exe -m pip install numpy
 3-C:\Users\Windownet\AppData\Local\Programs\Python\Python39\python.exe -m pip install opencv-python
 4-C:\Users\Windownet\AppData\Local\Programs\Python\Python39\python.exe -m pip install requests
+<<<<<<< HEAD
+=======
+
+>>>>>>> 151c0c9202786d6646c5cc9e41495e0df09b1b32
 
