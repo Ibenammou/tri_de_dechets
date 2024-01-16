@@ -1,8 +1,8 @@
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
 from datetime import datetime
 import hashlib
 import os.path
@@ -11,12 +11,13 @@ import re
 import struct
 import sys
 import tarfile
+import argparse
 
 import numpy as np
 from six.moves import urllib
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
-
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 from tensorflow.python.framework import graph_util
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import gfile
@@ -36,7 +37,6 @@ MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
 
 
 def create_image_lists(image_dir, testing_percentage, validation_percentage):
-
   if not gfile.Exists(image_dir):
     print("Image directory '" + image_dir + "' not found.")
     return None
@@ -71,9 +71,7 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     validation_images = []
     for file_name in file_list:
       base_name = os.path.basename(file_name)
-    
       hash_name = re.sub(r'_nohash_.*$', '', file_name)
-
       hash_name_hashed = hashlib.sha1(compat.as_bytes(hash_name)).hexdigest()
       percentage_hash = ((int(hash_name_hashed, 16) %
                           (MAX_NUM_IMAGES_PER_CLASS + 1)) *
@@ -94,22 +92,6 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
 
 
 def get_image_path(image_lists, label_name, index, image_dir, category):
-  """"Returns a path to an image for a label at the given index.
-
-  Args:
-    image_lists: Dictionary of training images for each label.
-    label_name: Label string we want to get an image for.
-    index: Int offset of the image we want. This will be moduloed by the
-    available number of images for the label, so it can be arbitrarily large.
-    image_dir: Root folder string of the subfolders containing the training
-    images.
-    category: Name string of set to pull images from - training, testing, or
-    validation.
-
-  Returns:
-    File system path string to an image that meets the requested parameters.
-
-  """
   if label_name not in image_lists:
     tf.logging.fatal('Label does not exist %s.', label_name)
   label_lists = image_lists[label_name]
@@ -128,32 +110,12 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
 
 def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
                         category):
-  """"Returns a path to a bottleneck file for a label at the given index.
-
-  Args:
-    image_lists: Dictionary of training images for each label.
-    label_name: Label string we want to get an image for.
-    index: Integer offset of the image we want. This will be moduloed by the
-    available number of images for the label, so it can be arbitrarily large.
-    bottleneck_dir: Folder string holding cached files of bottleneck values.
-    category: Name string of set to pull images from - training, testing, or
-    validation.
-
-  Returns:
-    File system path string to an image that meets the requested parameters.
-  """
   return get_image_path(image_lists, label_name, index, bottleneck_dir,
                         category) + '.txt'
 
 
 def create_inception_graph():
-  """"Creates a graph from saved GraphDef file and returns a Graph object.
-
-  Returns:
-    Graph holding the trained Inception network, and various tensors we'll be
-    manipulating.
-  """
-  with tf.Session() as sess:
+  with tf.io.Session() as sess:
     model_filename = os.path.join(
         FLAGS.model_dir, 'classify_image_graph_def.pb')
     with gfile.FastGFile(model_filename, 'rb') as f:
@@ -168,7 +130,6 @@ def create_inception_graph():
 
 def run_bottleneck_on_image(sess, image_data, image_data_tensor,
                             bottleneck_tensor):
-
   bottleneck_values = sess.run(
           bottleneck_tensor,
           {image_data_tensor: image_data})
@@ -177,7 +138,6 @@ def run_bottleneck_on_image(sess, image_data, image_data_tensor,
 
 
 def maybe_download_and_extract():
-
   dest_directory = FLAGS.model_dir
   if not os.path.exists(dest_directory):
     os.makedirs(dest_directory)
@@ -201,21 +161,17 @@ def maybe_download_and_extract():
 
 
 def ensure_dir_exists(dir_name):
-
   if not os.path.exists(dir_name):
     os.makedirs(dir_name)
 
 
 def write_list_of_floats_to_file(list_of_floats , file_path):
-
-
   s = struct.pack('d' * BOTTLENECK_TENSOR_SIZE, *list_of_floats)
   with open(file_path, 'wb') as f:
     f.write(s)
 
 
 def read_list_of_floats_from_file(file_path):
-
 
   with open(file_path, 'rb') as f:
     s = struct.unpack('d' * BOTTLENECK_TENSOR_SIZE, f.read())
@@ -239,7 +195,6 @@ def create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
 def get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir,
                              category, bottleneck_dir, jpeg_data_tensor,
                              bottleneck_tensor):
- 
   label_lists = image_lists[label_name]
   sub_dir = label_lists['dir']
   sub_dir_path = os.path.join(bottleneck_dir, sub_dir)
@@ -265,7 +220,6 @@ def get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir,
 
 def cache_bottlenecks(sess, image_lists, image_dir, bottleneck_dir,
                       jpeg_data_tensor, bottleneck_tensor):
- 
   how_many_bottlenecks = 0
   ensure_dir_exists(bottleneck_dir)
   for label_name, label_lists in image_lists.items():
@@ -336,6 +290,7 @@ def get_random_distorted_bottlenecks(
     image_index = random.randrange(MAX_NUM_IMAGES_PER_CLASS + 1)
     image_path = get_image_path(image_lists, label_name, image_index, image_dir,
                                 category)
+                                
     if not gfile.Exists(image_path):
       tf.logging.fatal('File does not exist %s', image_path)
     jpeg_data = gfile.FastGFile(image_path, 'rb').read()
@@ -466,9 +421,9 @@ def add_evaluation_step(result_tensor, ground_truth_tensor):
 
 def main(_):
   # Setup the directory we'll write summaries to for TensorBoard
-  if tf.gfile.Exists(FLAGS.summaries_dir):
-    tf.gfile.DeleteRecursively(FLAGS.summaries_dir)
-  tf.gfile.MakeDirs(FLAGS.summaries_dir)
+  if tf.io.gfile.exists(FLAGS.summaries_dir):
+    tf.io.gfile.rmtree(FLAGS.summaries_dir)
+  tf.io.gfile.makedirs(FLAGS.summaries_dir)
 
   # Set up the pre-trained graph.
   maybe_download_and_extract()
@@ -476,12 +431,9 @@ def main(_):
       create_inception_graph())
 
   # Look at the folder structure, and create lists of all the images.
-python "c:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_classification.py" --image_dir "C:/Users/Windownet/Desktop/waste segregation/santa/metal_waste" --testing_percentage 20 --validation_percentage 15
-
-
+  image_lists = create_image_lists(FLAGS.image_dir, FLAGS.testing_percentage,
+                                   FLAGS.validation_percentage)
   class_count = len(image_lists.keys())
-  AttributeError: 'NoneType' object has no attribute 'keys'
-
   if class_count == 0:
     print('No valid folders of images found at ' + FLAGS.image_dir)
     return -1
@@ -494,7 +446,7 @@ python "c:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_clas
   do_distort_images = should_distort_images(
       FLAGS.flip_left_right, FLAGS.random_crop, FLAGS.random_scale,
       FLAGS.random_brightness)
-  sess = tf.Session()
+  sess = tf.io.Session()
 
   if do_distort_images:
     # We will be applying distortions, so setup the operations we'll need.
@@ -523,14 +475,10 @@ python "c:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_clas
                                        sess.graph)
   validation_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/validation')
 
-  # Set up all our weights to their initial default values.
   init = tf.global_variables_initializer()
-  sess.run(init)
+  sess.run(init) 
 
-  # Run the training for as many cycles as requested on the command line.
   for i in range(FLAGS.how_many_training_steps):
-    # Get a batch of input bottleneck values, either calculated fresh every time
-    # with distortions applied, or from the cache stored on disk.
     if do_distort_images:
       train_bottlenecks, train_ground_truth = get_random_distorted_bottlenecks(
           sess, image_lists, FLAGS.train_batch_size, 'training',
@@ -541,8 +489,6 @@ python "c:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_clas
           sess, image_lists, FLAGS.train_batch_size, 'training',
           FLAGS.bottleneck_dir, FLAGS.image_dir, jpeg_data_tensor,
           bottleneck_tensor)
-    # Feed the bottlenecks and ground truth into the graph, and run a training
-    # step. Capture training summaries for TensorBoard with the `merged` op.
     train_summary, _ = sess.run([merged, train_step],
              feed_dict={bottleneck_input: train_bottlenecks,
                         ground_truth_input: train_ground_truth})
@@ -574,9 +520,6 @@ python "c:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_clas
       print('%s: Step %d: Validation accuracy = %.1f%% (N=%d)' %
             (datetime.now(), i, validation_accuracy * 100,
              len(validation_bottlenecks)))
-
-  # We've completed all our training, so run a final test evaluation on
-  # some new images we haven't used before.
   test_bottlenecks, test_ground_truth, test_filenames = (
       get_random_cached_bottlenecks(sess, image_lists, FLAGS.test_batch_size,
                                     'testing', FLAGS.bottleneck_dir,
@@ -595,8 +538,6 @@ python "c:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_clas
       if predictions[i] != test_ground_truth[i].argmax():
         print('%70s  %s' % (test_filename,
                             list(image_lists.keys())[predictions[i]]))
-
-  # Write out the trained graph and labels with the weights stored as constants.
   output_graph_def = graph_util.convert_variables_to_constants(
       sess, graph.as_graph_def(), [FLAGS.final_tensor_name])
   with gfile.FastGFile(FLAGS.output_graph, 'wb') as f:
@@ -608,29 +549,32 @@ python "c:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_clas
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      '--image_dir',
-      type=str,
-      default='',
-      help='Path to folders of labeled images.'
-  )
+    '--image_dir',
+    type=str,
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\santa\\metal_waste',
+    help='Path to folders of labeled images of metal waste.'
+)
+
   parser.add_argument(
-      '--output_graph',
-      type=str,
-      default='/tmp/output_graph.pb',
-      help='Where to save the trained graph.'
-  )
+    '--output_graph',
+    type=str,
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\output_graph_2025-23-05.pb',
+    help='Where to save the trained graph for the updated date.'
+)
+
   parser.add_argument(
-      '--output_labels',
-      type=str,
-      default='/tmp/output_labels.txt',
-      help='Where to save the trained graph\'s labels.'
-  )
+    '--output_labels',
+    type=str,
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\output_labels_2025-23-05.txt',
+    help='Where to save the trained graph\'s labels for the updated date.'
+)
+
   parser.add_argument(
-      '--summaries_dir',
-      type=str,
-      default='/tmp/retrain_logs',
-      help='Where to save summary logs for TensorBoard.'
-  )
+    '--summaries_dir',
+    type=str,
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\summaries',
+    help='Where to save summary logs for TensorBoard for the updated date.'
+)
   parser.add_argument(
       '--how_many_training_steps',
       type=int,
@@ -700,21 +644,21 @@ if __name__ == '__main__':
       action='store_true'
   )
   parser.add_argument(
-      '--model_dir',
-      type=str,
-      default='/tmp/imagenet',
-      help="""\
-      Path to classify_image_graph_def.pb,
-      imagenet_synset_to_human_label_map.txt, and
-      imagenet_2012_challenge_label_map_proto.pbtxt.\
-      """
-  )
+    '--model_dir',
+    type=str,
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\imagenet',
+    help="""\
+    Path to classify_image_graph_def.pb,
+    imagenet_synset_to_human_label_map.txt, and
+    imagenet_2012_challenge_label_map_proto.pbtxt.\
+    """
+)
   parser.add_argument(
-      '--bottleneck_dir',
-      type=str,
-      default='/tmp/bottleneck',
-      help='Path to cache bottleneck layer values as files.'
-  )
+    '--bottleneck_dir',
+    type=str,
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\bottleneck',
+    help='Path to cache bottleneck layer values as files.'
+)
   parser.add_argument(
       '--final_tensor_name',
       type=str,
@@ -758,6 +702,5 @@ if __name__ == '__main__':
       input pixels up or down by.\
       """
   )
-  FLAGS, unparsed = parser.parse_known_args()
-   FLAGS.image_dir = "C:/Users/Windownet/Desktop/waste segregation/santa/metal_waste"
+FLAGS, unparsed = parser.parse_known_args()
 tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)
