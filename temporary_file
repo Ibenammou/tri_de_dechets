@@ -9,7 +9,6 @@ NB: khask tchofi l username dyal pc dyalk o tbdli dik Windownet//
 3-C:\Users\Windownet\AppData\Local\Programs\Python\Python39\python.exe -m pip install opencv-python
 4-C:\Users\Windownet\AppData\Local\Programs\Python\Python39\python.exe -m pip install requests
 <<<<<<< HEAD
-=======
-
->>>>>>> 151c0c9202786d6646c5cc9e41495e0df09b1b32
-
+//for anyone facing running the image classification code u could use this powershell command on ur terminals :
+& "C:/Users/Windownet/AppData/Local/Programs/Python/Python39/python.exe" "C:/Users/Windownet/Desktop/waste segregation/tri_de_dechets-1/image_classification.py" --image_dir "C:/Users/Windownet/Desktop/waste segregation/santa/metal_waste" --output_graph "C:/Users/Windownet/Desktop/waste segregation/output_graph_2025-23-05.pb" --output_labels "C:/Users/Windownet/Desktop/waste segregation/output_labels_2025-23-05.txt" --summaries_dir "C:/Users/Windownet/Desktop/waste segregation/summaries" --how_many_training_steps 4000 --learning_rate 0.01 --testing_percentage 10 --validation_percentage 10 --eval_step_interval 10 --train_batch_size 100 --test_batch_size -1 --validation_batch_size 100 --print_misclassified_test_images --model_dir "C:/Users/Windownet/Desktop/waste segregation/imagenet" --bottleneck_dir "C:/Users/Windownet/Desktop/waste segregation/bottleneck" --final_tensor_name "final_result" --flip_left_right --random_crop 0 --random_scale 0 --random_brightness 0
+NB: please make sure u all created the necessary folders and u got ur correct path
