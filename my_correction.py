@@ -444,7 +444,7 @@ def main(_):
   do_distort_images = should_distort_images(
       FLAGS.flip_left_right, FLAGS.random_crop, FLAGS.random_scale,
       FLAGS.random_brightness)
-  sess = tf.io.Session()
+  sess = tf.compat.v1.Session()
 
   if do_distort_images:
     # We will be applying distortions, so setup the operations we'll need.
@@ -549,7 +549,7 @@ if __name__ == '__main__':
   parser.add_argument(
     '--image_dir',
     type=str,
-    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\santa\\metal_waste',
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\santa',
     help='Path to folders of labeled images of metal waste.'
 )
 
