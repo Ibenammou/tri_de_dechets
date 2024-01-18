@@ -41,6 +41,7 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     print("Image directory '" + image_dir + "' not found.")
     return None
   result = {}
+
   sub_dirs = [x[0] for x in gfile.Walk(image_dir)]
   # The root directory comes first, so skip it.
   is_root_dir = True
@@ -107,7 +108,6 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
   full_path = os.path.join(image_dir, sub_dir, base_name)
   return full_path
 
-
 def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
                         category):
   return get_image_path(image_lists, label_name, index, bottleneck_dir,
@@ -115,18 +115,17 @@ def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
 
 
 def create_inception_graph():
-  with tf.io.Session() as sess:
-    model_filename = os.path.join(
-        FLAGS.model_dir, 'classify_image_graph_def.pb')
-    with gfile.FastGFile(model_filename, 'rb') as f:
-      graph_def = tf.GraphDef()
-      graph_def.ParseFromString(f.read())
-      bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
-          tf.import_graph_def(graph_def, name='', return_elements=[
-              BOTTLENECK_TENSOR_NAME, JPEG_DATA_TENSOR_NAME,
-              RESIZED_INPUT_TENSOR_NAME]))
-  return sess.graph, bottleneck_tensor, jpeg_data_tensor, resized_input_tensor
-
+    with tf.compat.v1.Session() as sess:
+        model_filename = os.path.join(
+            FLAGS.model_dir, 'classify_image_graph_def.pb')
+        with gfile.FastGFile(model_filename, 'rb') as f:
+            graph_def = tf.compat.v1.GraphDef()
+            graph_def.ParseFromString(f.read())
+            bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
+                tf.import_graph_def(graph_def, name='', return_elements=[
+                    BOTTLENECK_TENSOR_NAME, JPEG_DATA_TENSOR_NAME,
+                    RESIZED_INPUT_TENSOR_NAME]))
+    return sess.graph, bottleneck_tensor, jpeg_data_tensor, resized_input_tensor
 
 def run_bottleneck_on_image(sess, image_data, image_data_tensor,
                             bottleneck_tensor):
@@ -551,8 +550,8 @@ if __name__ == '__main__':
   parser.add_argument(
     '--image_dir',
     type=str,
-    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\santa\\metal_waste',
-    help='Path to folders of labeled images of metal waste.'
+    default='C:\\Users\\Windownet\\Desktop\\waste segregation\\santa',
+    help='Path to folders of labeled images of images.'
 )
 
   parser.add_argument(
