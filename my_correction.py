@@ -1,4 +1,3 @@
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -12,16 +11,18 @@ import struct
 import sys
 import tarfile
 import argparse
+import keras
 
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from keras.models import Sequential
+from keras.layers import Dense
 from tensorflow.python.framework import graph_util
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import gfile
 from tensorflow.python.util import compat
+from tensorflow.python.platform import gfile
 
 FLAGS = None
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
@@ -34,6 +35,7 @@ MODEL_INPUT_DEPTH = 3
 JPEG_DATA_TENSOR_NAME = 'DecodeJpeg/contents:0'
 RESIZED_INPUT_TENSOR_NAME = 'ResizeBilinear:0'
 MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
+model_filename = "C:\\Users\\Windownet\\Desktop\\waste segregation\\inception-2015-12-05\\classify_image_graph_def.pb"
 
 
 def create_image_lists(image_dir, testing_percentage, validation_percentage):
@@ -41,10 +43,6 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     print("Image directory '" + image_dir + "' not found.")
     return None
   result = {}
-<<<<<<< HEAD
-
-=======
->>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
   sub_dirs = [x[0] for x in gfile.Walk(image_dir)]
   # The root directory comes first, so skip it.
   is_root_dir = True
@@ -116,19 +114,21 @@ def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
   return get_image_path(image_lists, label_name, index, bottleneck_dir,
                         category) + '.txt'
 
-
 def create_inception_graph():
+    # Load the Inception model
+    with tf.io.gfile.GFile(model_filename, 'rb') as f:
+        graph_def = tf.compat.v1.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+    # Create a new TensorFlow session
     with tf.compat.v1.Session() as sess:
-        model_filename = os.path.join(
-            FLAGS.model_dir, 'classify_image_graph_def.pb')
-        with gfile.FastGFile(model_filename, 'rb') as f:
-            graph_def = tf.compat.v1.GraphDef()
-            graph_def.ParseFromString(f.read())
-            bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
-                tf.import_graph_def(graph_def, name='', return_elements=[
-                    BOTTLENECK_TENSOR_NAME, JPEG_DATA_TENSOR_NAME,
-                    RESIZED_INPUT_TENSOR_NAME]))
+        # Define the input and output tensors for the Inception model
+        bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
+            tf.import_graph_def(graph_def, name='', return_elements=[
+                'pool_3/_reshape:0', 'DecodeJpeg/contents:0', 'ResizeBilinear:0']))
+
     return sess.graph, bottleneck_tensor, jpeg_data_tensor, resized_input_tensor
+
 
 def run_bottleneck_on_image(sess, image_data, image_data_tensor,
                             bottleneck_tensor):
@@ -184,41 +184,63 @@ bottleneck_path_2_bottleneck_values = {}
 
 def create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
                            image_dir, category, sess, jpeg_data_tensor, bottleneck_tensor):
-  print('Creating bottleneck at ' + bottleneck_path)
-  image_path = get_image_path(image_lists, label_name, index, image_dir, category)
-  if not gfile.Exists(image_path):
-    tf.logging.fatal('File does not exist %s', image_path)
-  image_data = gfile.FastGFile(image_path, 'rb').read()
-  bottleneck_values = run_bottleneck_on_image(sess, image_data, jpeg_data_tensor, bottleneck_tensor)
-  bottleneck_string = ','.join(str(x) for x in bottleneck_values)
-  with open(bottleneck_path, 'w') as bottleneck_file:
-    bottleneck_file.write(bottleneck_string)
+    print('Creating bottleneck at ' + bottleneck_path)
+    image_path = get_image_path(image_lists, label_name, index, image_dir, category)
+
+    try:
+        if not gfile.Exists(image_path):
+            raise FileNotFoundError(f'File does not exist: {image_path}')
+
+        image_data = gfile.FastGFile(image_path, 'rb').read()
+        bottleneck_values = run_bottleneck_on_image(sess, image_data, jpeg_data_tensor, bottleneck_tensor)
+        bottleneck_string = ','.join(str(x) for x in bottleneck_values)
+
+        with open(bottleneck_path, 'w') as bottleneck_file:
+            bottleneck_file.write(bottleneck_string)
+    
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+    
+    except tf.errors.InvalidArgumentError as e:
+        print(f"Error processing image: {e}")
+        # Handle the error gracefully, e.g., by skipping this image
 
 def get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir,
                              category, bottleneck_dir, jpeg_data_tensor,
                              bottleneck_tensor):
-  label_lists = image_lists[label_name]
-  sub_dir = label_lists['dir']
-  sub_dir_path = os.path.join(bottleneck_dir, sub_dir)
-  ensure_dir_exists(sub_dir_path)
-  bottleneck_path = get_bottleneck_path(image_lists, label_name, index, bottleneck_dir, category)
-  if not os.path.exists(bottleneck_path):
-    create_bottleneck_file(bottleneck_path, image_lists, label_name, index, image_dir, category, sess, jpeg_data_tensor, bottleneck_tensor)
-  with open(bottleneck_path, 'r') as bottleneck_file:
-    bottleneck_string = bottleneck_file.read()
-  did_hit_error = False
-  try:
-    bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
-  except:
-    print("Invalid float found, recreating bottleneck")
-    did_hit_error = True
-  if did_hit_error:
-    create_bottleneck_file(bottleneck_path, image_lists, label_name, index, image_dir, category, sess, jpeg_data_tensor, bottleneck_tensor)
+    label_lists = image_lists[label_name]
+    sub_dir = label_lists['dir']
+    sub_dir_path = os.path.join(bottleneck_dir, sub_dir)
+    ensure_dir_exists(sub_dir_path)
+    bottleneck_path = get_bottleneck_path(image_lists, label_name, index, bottleneck_dir, category)
+    
+    # Check if the bottleneck file exists
+    if not os.path.exists(bottleneck_path):
+        # If not, create it
+        create_bottleneck_file(bottleneck_path, image_lists, label_name, index, image_dir, category, sess, jpeg_data_tensor, bottleneck_tensor)
+    
+    # Read bottleneck values from the file
     with open(bottleneck_path, 'r') as bottleneck_file:
-      bottleneck_string = bottleneck_file.read()
-    # Allow exceptions to propagate here, since they shouldn't happen after a fresh creation
-    bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
-  return bottleneck_values
+        bottleneck_string = bottleneck_file.read()
+    
+    # Try to convert values to float, recreate bottleneck on error
+    did_hit_error = False
+    try:
+        bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
+    except ValueError:
+        print("Invalid float found, recreating bottleneck")
+        did_hit_error = True
+    
+    if did_hit_error:
+        # Recreate the bottleneck file if an error occurred
+        create_bottleneck_file(bottleneck_path, image_lists, label_name, index, image_dir, category, sess, jpeg_data_tensor, bottleneck_tensor)
+        with open(bottleneck_path, 'r') as bottleneck_file:
+            bottleneck_string = bottleneck_file.read()
+        # Allow exceptions to propagate here, since they shouldn't happen after a fresh creation
+        bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
+    
+    return bottleneck_values
+
 
 def cache_bottlenecks(sess, image_lists, image_dir, bottleneck_dir,
                       jpeg_data_tensor, bottleneck_tensor):
@@ -319,39 +341,39 @@ def should_distort_images(flip_left_right, random_crop, random_scale,
 
 def add_input_distortions(flip_left_right, random_crop, random_scale,
                           random_brightness):
-  jpeg_data = tf.placeholder(tf.string, name='DistortJPGInput')
-  decoded_image = tf.image.decode_jpeg(jpeg_data, channels=MODEL_INPUT_DEPTH)
-  decoded_image_as_float = tf.cast(decoded_image, dtype=tf.float32)
-  decoded_image_4d = tf.expand_dims(decoded_image_as_float, 0)
-  margin_scale = 1.0 + (random_crop / 100.0)
-  resize_scale = 1.0 + (random_scale / 100.0)
-  margin_scale_value = tf.constant(margin_scale)
-  resize_scale_value = tf.random_uniform(tensor_shape.scalar(),
-                                         minval=1.0,
-                                         maxval=resize_scale)
-  scale_value = tf.multiply(margin_scale_value, resize_scale_value)
-  precrop_width = tf.multiply(scale_value, MODEL_INPUT_WIDTH)
-  precrop_height = tf.multiply(scale_value, MODEL_INPUT_HEIGHT)
-  precrop_shape = tf.stack([precrop_height, precrop_width])
-  precrop_shape_as_int = tf.cast(precrop_shape, dtype=tf.int32)
-  precropped_image = tf.image.resize_bilinear(decoded_image_4d,
-                                              precrop_shape_as_int)
-  precropped_image_3d = tf.squeeze(precropped_image, squeeze_dims=[0])
-  cropped_image = tf.random_crop(precropped_image_3d,
-                                 [MODEL_INPUT_HEIGHT, MODEL_INPUT_WIDTH,
-                                  MODEL_INPUT_DEPTH])
-  if flip_left_right:
-    flipped_image = tf.image.random_flip_left_right(cropped_image)
-  else:
-    flipped_image = cropped_image
-  brightness_min = 1.0 - (random_brightness / 100.0)
-  brightness_max = 1.0 + (random_brightness / 100.0)
-  brightness_value = tf.random_uniform(tensor_shape.scalar(),
-                                       minval=brightness_min,
-                                       maxval=brightness_max)
-  brightened_image = tf.multiply(flipped_image, brightness_value)
-  distort_result = tf.expand_dims(brightened_image, 0, name='DistortResult')
-  return jpeg_data, distort_result
+    jpeg_data = tf.compat.v1.placeholder(tf.string, name='DistortJPGInput')
+    decoded_image = tf.image.decode_jpeg(jpeg_data, channels=MODEL_INPUT_DEPTH)
+    decoded_image_as_float = tf.cast(decoded_image, dtype=tf.float32)
+    decoded_image_4d = tf.expand_dims(decoded_image_as_float, 0)
+    margin_scale = 1.0 + (random_crop / 100.0)
+    resize_scale = 1.0 + (random_scale / 100.0)
+    margin_scale_value = tf.constant(margin_scale)
+    resize_scale_value = tf.random_uniform(tensor_shape.scalar(),
+                                           minval=1.0,
+                                           maxval=resize_scale)
+    scale_value = tf.multiply(margin_scale_value, resize_scale_value)
+    precrop_width = tf.multiply(scale_value, MODEL_INPUT_WIDTH)
+    precrop_height = tf.multiply(scale_value, MODEL_INPUT_HEIGHT)
+    precrop_shape = tf.stack([precrop_height, precrop_width])
+    precrop_shape_as_int = tf.cast(precrop_shape, dtype=tf.int32)
+    precropped_image = tf.image.resize_bilinear(decoded_image_4d,
+                                                precrop_shape_as_int)
+    precropped_image_3d = tf.squeeze(precropped_image, squeeze_dims=[0])
+    cropped_image = tf.random_crop(precropped_image_3d,
+                                   [MODEL_INPUT_HEIGHT, MODEL_INPUT_WIDTH,
+                                    MODEL_INPUT_DEPTH])
+    if flip_left_right:
+        flipped_image = tf.image.random_flip_left_right(cropped_image)
+    else:
+        flipped_image = cropped_image
+    brightness_min = 1.0 - (random_brightness / 100.0)
+    brightness_max = 1.0 + (random_brightness / 100.0)
+    brightness_value = tf.random_uniform(tensor_shape.scalar(),
+                                         minval=brightness_min,
+                                         maxval=brightness_max)
+    brightened_image = tf.multiply(flipped_image, brightness_value)
+    distort_result = tf.expand_dims(brightened_image, 0, name='DistortResult')
+    return jpeg_data, distort_result
 
 
 def variable_summaries(var):
@@ -382,14 +404,15 @@ def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor):
   layer_name = 'final_training_ops'
   with tf.name_scope(layer_name):
     with tf.name_scope('weights'):
-      layer_weights = tf.Variable(tf.truncated_normal([BOTTLENECK_TENSOR_SIZE, class_count], stddev=0.001), name='final_weights')
-      variable_summaries(layer_weights)
-    with tf.name_scope('biases'):
-      layer_biases = tf.Variable(tf.zeros([class_count]), name='final_biases')
-      variable_summaries(layer_biases)
-    with tf.name_scope('Wx_plus_b'):
-      logits = tf.matmul(bottleneck_input, layer_weights) + layer_biases
-      tf.summary.histogram('pre_activations', logits)
+          layer_weights = tf.Variable(tf.random.truncated_normal([BOTTLENECK_TENSOR_SIZE, class_count], stddev=0.001), name='final_weights')
+  variable_summaries(layer_weights)
+  with tf.name_scope('biases'):
+    layer_biases = tf.Variable(tf.zeros([class_count]), name='final_biases')
+    variable_summaries(layer_biases)
+  with tf.name_scope('Wx_plus_b'):
+    logits = tf.matmul(bottleneck_input, layer_weights) + layer_biases
+    tf.summary.histogram('pre_activations', logits)
+
 
   final_tensor = tf.nn.softmax(logits, name=final_tensor_name)
   tf.summary.histogram('activations', final_tensor)
@@ -448,11 +471,7 @@ def main(_):
   do_distort_images = should_distort_images(
       FLAGS.flip_left_right, FLAGS.random_crop, FLAGS.random_scale,
       FLAGS.random_brightness)
-<<<<<<< HEAD
-  sess = tf.io.Session()
-=======
   sess = tf.compat.v1.Session()
->>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
 
   if do_distort_images:
     # We will be applying distortions, so setup the operations we'll need.
@@ -481,7 +500,7 @@ def main(_):
                                        sess.graph)
   validation_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/validation')
 
-  init = tf.global_variables_initializer()
+  init = tf.compat.v1.global_variables_initializer()
   sess.run(init) 
 
   for i in range(FLAGS.how_many_training_steps):
@@ -558,11 +577,7 @@ if __name__ == '__main__':
     '--image_dir',
     type=str,
     default='C:\\Users\\Windownet\\Desktop\\waste segregation\\santa',
-<<<<<<< HEAD
-    help='Path to folders of labeled images of images.'
-=======
     help='Path to folders of labeled images of metal waste.'
->>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
 )
 
   parser.add_argument(
@@ -713,8 +728,4 @@ if __name__ == '__main__':
       """
   )
 FLAGS, unparsed = parser.parse_known_args()
-<<<<<<< HEAD
 tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-=======
-tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)
->>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
