@@ -41,7 +41,10 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
     print("Image directory '" + image_dir + "' not found.")
     return None
   result = {}
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
   sub_dirs = [x[0] for x in gfile.Walk(image_dir)]
   # The root directory comes first, so skip it.
   is_root_dir = True
@@ -445,7 +448,11 @@ def main(_):
   do_distort_images = should_distort_images(
       FLAGS.flip_left_right, FLAGS.random_crop, FLAGS.random_scale,
       FLAGS.random_brightness)
+<<<<<<< HEAD
   sess = tf.io.Session()
+=======
+  sess = tf.compat.v1.Session()
+>>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
 
   if do_distort_images:
     # We will be applying distortions, so setup the operations we'll need.
@@ -551,7 +558,11 @@ if __name__ == '__main__':
     '--image_dir',
     type=str,
     default='C:\\Users\\Windownet\\Desktop\\waste segregation\\santa',
+<<<<<<< HEAD
     help='Path to folders of labeled images of images.'
+=======
+    help='Path to folders of labeled images of metal waste.'
+>>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
 )
 
   parser.add_argument(
@@ -702,4 +713,8 @@ if __name__ == '__main__':
       """
   )
 FLAGS, unparsed = parser.parse_known_args()
+<<<<<<< HEAD
 tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+=======
+tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+>>>>>>> 1f0fab40e3400bdcecb6b15331c38cfb6d7b1c41
