@@ -4,11 +4,11 @@ import numpy as np
 import tensorflow as tf
 
 # IP Webcam configuration
-ip_webcam_url = 'http://your_phone_ip:8080/shot.jpg'
+url_ipwebcam = 'http://192.168.1.8:8080/shot.jpg'
 
 # Load TensorFlow model
-model = tf.saved_model.load('path/to/your/saved_model')
-
+# Load pre-trained Inception model
+model = tf.keras.applications.InceptionV3(weights='imagenet', include_top=True)
 def capture_image():
     # Access the IP Webcam stream and capture an image
     response = requests.get(ip_webcam_url)
