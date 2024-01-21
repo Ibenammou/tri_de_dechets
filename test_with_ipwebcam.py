@@ -4,11 +4,12 @@ import numpy as np
 import tensorflow as tf
 
 # IP Webcam configuration
-url_ipwebcam = 'http://192.168.1.8:8080/shot.jpg'
+ip_webcam_url = 'http://192.168.1.8:8080/shot.jpg'
 
 # Load TensorFlow model
 # Load pre-trained Inception model
 model = tf.keras.applications.InceptionV3(weights='imagenet', include_top=True)
+
 def capture_image():
     # Access the IP Webcam stream and capture an image
     response = requests.get(ip_webcam_url)
@@ -41,9 +42,11 @@ def map_predictions_to_waste_type(predictions):
     # For simplicity, let's assume a binary classification (e.g., recyclable or non-recyclable)
     # You need to customize this based on your model's output
     if predictions[0, 0] > 0.5:
-        waste_type = "Recyclable"
+        waste_type = "plastic_waste"
+    elif predictions[0, 2] > 0.5:  # Assuming the third class corresponds to metal
+        waste_type = "metal_waste"
     else:
-        waste_type = "Non-Recyclable"
+        waste_type = "paper_waste"
 
     return waste_type
 
