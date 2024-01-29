@@ -16,6 +16,7 @@ import keras
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 from keras.models import Sequential
 from keras.layers import Dense
 from tensorflow.python.framework import graph_util
@@ -114,33 +115,68 @@ def get_bottleneck_path(image_lists, label_name, index, bottleneck_dir,
   return get_image_path(image_lists, label_name, index, bottleneck_dir,
                         category) + '.txt'
 
-def create_inception_graph():
-    # Load the Inception model
-    with tf.io.gfile.GFile(model_filename, 'rb') as f:
-        graph_def = tf.compat.v1.GraphDef()
-        graph_def.ParseFromString(f.read())
-
-    # Create a new TensorFlow session
-    with tf.compat.v1.Session() as sess:
-        # Define the input and output tensors for the Inception model
-        bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
-            tf.import_graph_def(graph_def, name='', return_elements=[
-                'pool_3/_reshape:0', 'DecodeJpeg/contents:0', 'ResizeBilinear:0']))
-
-        # Modify the input tensor to use placeholder_with_default
-        jpeg_data_tensor = tf.compat.v1.placeholder_with_default(
-            jpeg_data_tensor, shape=[], name='input/JPEGImage')
-
+-def create_inception_graph():
+-    # Load the Inception model
+-    with gfile.GFile(model_filename, 'rb') as f:
+-        graph_def = tf.compat.v1.GraphDef()
+-        graph_def.ParseFromString(f.read())
+-
+-    # Create a new TensorFlow session
+-    with tf.compat.v1.Session() as sess:
+-        # Define the input and output tensors for the Inception model
+-        bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
+-            tf.import_graph_def(graph_def, name='', return_elements=[
+-                'pool_3/_reshape:0', 'DecodeJpeg/contents:0', 'ResizeBilinear:0']))
+-
+-        # Modify the input tensor to use placeholder_with_default
+-        jpeg_data_tensor = tf.compat.v1.placeholder_with_default(
+-            jpeg_data_tensor, shape=[], name='input/JPEGImage')
+-
++def create_inception_graph(model_filename: str) -> Tuple[tf.Graph, tf.Tensor, tf.Tensor, tf.Tensor]:
++    with gfile.GFile(model_filename, 'rb') as f:
++        graph_def = tf.GraphDef()
++        graph_def.ParseFromString(f.read())
++
++    with tf.Session() as sess:
++        bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
++            tf.import_graph_def(graph_def, name='', return_elements=[
++                'pool_3/_reshape:0', 'DecodeJpeg/contents:0', 'ResizeBilinear:0']))
++
++        jpeg_data_tensor = tf.placeholder_with_default(
++            jpeg_data_tensor, shape=[], name='input/JPEGImage')
++
     return sess.graph, bottleneck_tensor, jpeg_data_tensor, resized_input_tensor
+<<<<<  bot-cbef5a01-d31b-4463-869e-4104e3c221a6  >>>>>
++def create_inception_graph(model_filename: str) -> Tuple[tf.Graph, tf.Tensor, tf.Tensor, tf.Tensor]:
++    with gfile.GFile(model_filename, 'rb') as f:
++        graph_def = tf.GraphDef()
++        graph_def.ParseFromString(f.read())
++
++    with tf.Session() as sess:
++        bottleneck_tensor, jpeg_data_tensor, resized_input_tensor = (
++            tf.import_graph_def(graph_def, name='', return_elements=[
++                'pool_3/_reshape:0', 'DecodeJpeg/contents:0', 'ResizeBilinear:0']))
++
++        jpeg_data_tensor = tf.placeholder_with_default(
++            jpeg_data_tensor, shape=[], name='input/JPEGImage')
++
+    return sess.graph, bottleneck_tensor, jpeg_data_tensor, resized_input_tensor
+<<<<<  bot-cbef5a01-d31b-4463-869e-4104e3c221a6  >>>>>
 
 
 def run_bottleneck_on_image(sess, image_data, image_data_tensor,
                             bottleneck_tensor):
-  bottleneck_values = sess.run(
-          bottleneck_tensor,
-          {image_data_tensor: image_data})
-  bottleneck_values = np.squeeze(bottleneck_values)
-  return bottleneck_values
+    # Ensure that image_data is of shape (MODEL_INPUT_WIDTH, MODEL_INPUT_HEIGHT, MODEL_INPUT_DEPTH)
+    # Modify this according to your actual input data shape
+    image_data = np.expand_dims(image_data, axis=0)
+
+    bottleneck_values = sess.run(
+        bottleneck_tensor,
+        {image_data_tensor: image_data}
+    )
+    
+    bottleneck_values = np.squeeze(bottleneck_values)
+    return bottleneck_values
 
 
 def maybe_download_and_extract():
@@ -394,9 +430,9 @@ def variable_summaries(var):
 
 def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor):
     with tf.name_scope('input'):
-        bottleneck_input = tf.compat.v1.placeholder_with_default(
-            bottleneck_tensor, shape=[None, BOTTLENECK_TENSOR_SIZE],
-            name='BottleneckInputPlaceholder')
+        optimizer = tf.compat.v1.train.GradientDescentOptimizer(FLAGS.learning_rate)
+
+        bottleneck_input = bottleneck_tensor
 
         ground_truth_input = tf.compat.v1.placeholder(tf.float32,
                                                       [None, class_count],
@@ -428,8 +464,13 @@ def add_final_training_ops(class_count, final_tensor_name, bottleneck_tensor):
     tf.summary.scalar('cross_entropy', cross_entropy_mean)
 
     with tf.name_scope('train'):
-        train_step = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(
-            cross_entropy_mean)
+        trainable_vars = tf.compat.v1.trainable_variables()
+        trainable_vars = tf.compat.v1.trainable_variables()
+        gradients = optimizer.compute_gradients(cross_entropy_mean, var_list=trainable_vars)
+        train_step = optimizer.apply_gradients(gradients)
+
+
+
 
     return (train_step, cross_entropy_mean, bottleneck_input, ground_truth_input,
             final_tensor)
@@ -499,10 +540,9 @@ def main(_):
       final_tensor, ground_truth_input)
 
   # Merge all the summaries and write them out to /tmp/retrain_logs (by default)
-  merged = tf.summary.merge_all()
-  train_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/train',
-                                       sess.graph)
-  validation_writer = tf.summary.FileWriter(FLAGS.summaries_dir + '/validation')
+  merged = tf.compat.v1.summary.merge_all()
+  train_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/train', sess.graph)
+  validation_writer = tf.compat.v1.summary.FileWriter(FLAGS.summaries_dir + '/validation')
 
   init = tf.compat.v1.global_variables_initializer()
   sess.run(init) 
