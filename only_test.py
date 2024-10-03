@@ -4,7 +4,7 @@ import serial
 import time
 
 # Path to the trained model
-model_path = "C:\\Users\\Windownet\\waste_segregation_model.keras"
+model_path = "C:/Users/windownet/waste_segregation_model.keras"
 
 # Load the trained model
 loaded_model = tf.keras.models.load_model(model_path)
@@ -26,7 +26,17 @@ def classify_image(image_path):
     class_labels = ['paper_waste', 'plastic_waste', 'metal_waste']
     class_label = class_labels[class_index]
 
-    return class_label
+    # Adjust the predicted class based on your requirements
+    if class_label == 'metal_waste':
+        adjusted_class_label = 'plastic_waste'  # Map metal to plastic
+    elif class_label == 'plastic_waste':
+        adjusted_class_label = 'paper_waste'    # Map plastic to paper
+    elif class_label == 'paper_waste':
+        adjusted_class_label = 'metal_waste'     # Map paper to metal
+    else:
+        adjusted_class_label = class_label  # Default to the original label
+
+    return adjusted_class_label
 
 # Function to map the predicted class to the servo angle
 def map_predicted_class_to_servo_angle(predicted_class):
@@ -50,8 +60,7 @@ def send_angle_to_arduino(angle):
         print(f"Error communicating with Arduino: {e}")
 
 # Path of the image to test
-image_path_to_test = r'C:\\Users\\Windownet\\Desktop\\test5.jpg'
-
+image_path_to_test = r"C:/Users/windownet/Desktop/test3.jpg"
 # Classification of the image
 predicted_class = classify_image(image_path_to_test)
 print(f"The predicted class is: {predicted_class}")
