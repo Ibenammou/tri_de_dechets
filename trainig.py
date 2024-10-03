@@ -4,7 +4,7 @@ import serial
 import time
 
 # Path to the trained model
-model_path = "C:/Users/mustapha/waste_segregation_model.keras"
+model_path = "C:/Users/windownet/waste_segregation_model.keras"
 
 # Load the trained model
 loaded_model = tf.keras.models.load_model(model_path)
