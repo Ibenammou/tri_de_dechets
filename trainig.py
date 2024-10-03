@@ -1,108 +1,73 @@
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import layers, models
-import matplotlib.pyplot as plt
-
-# Path to your dataset
-dataset_path = "C:/Users/Windownet/Desktop/waste segregation/santa"
-
-# Parameters
-batch_size = 16
-img_height, img_width = 224, 224
-
-# Data Augmentation
-train_datagen = ImageDataGenerator(
-    rescale=1./255,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    validation_split=0.2
-)
-
-train_generator = train_datagen.flow_from_directory(
-    dataset_path,
-    target_size=(img_height, img_width),
-    batch_size=batch_size,
-    class_mode='categorical',
-    subset='training'
-)
-
-validation_generator = train_datagen.flow_from_directory(
-    dataset_path,
-    target_size=(img_height, img_width),
-    batch_size=batch_size,
-    class_mode='categorical',
-    subset='validation'
-)
-
-# Model
-model = models.Sequential()
-model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(128, (3, 3), activation='relu'))
-model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Flatten())
-model.add(layers.Dense(128, activation='relu'))
-model.add(layers.Dense(3, activation='softmax'))  # Assuming 3 classes (paper, metal, plastic)
-
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-
-# Training
-history = model.fit(
-    train_generator,
-    epochs=10,
-    validation_data=validation_generator
-)
-
-# Save the model as .keras
-model.save("waste_segregation_model.keras")
-
-# Plot training history
-plt.plot(history.history['accuracy'], label='accuracy')
-plt.plot(history.history['val_accuracy'], label='val_accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-# Save the model in Keras format
-# test_model.py
-import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+import serial
+import time
 
-# Load the model (assuming it was saved as .keras)
-loaded_model = tf.keras.models.load_model("waste_segregation_model.keras")
+# Path to the trained model
+model_path = "C:/Users/mustapha/waste_segregation_model.keras"
 
-# Path to the image you want to test
-image_path_to_test = r'C:\\Users\\Windownet\\Desktop\\test1.jpg'
+# Load the trained model
+loaded_model = tf.keras.models.load_model(model_path)
 
-# Preprocess the Input Image
-def preprocess_image(image_path):
+# Function to preprocess the image
+def preprocess_image(image_path, img_height=224, img_width=224):
     img = load_img(image_path, target_size=(img_height, img_width))
     img_array = img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)  # Create a batch
-
     return img_array / 255.0  # Normalize the image
 
-# Classify the Image
+# Function to classify the image
 def classify_image(image_path):
     preprocessed_image = preprocess_image(image_path)
     prediction = loaded_model.predict(preprocessed_image)
     class_index = tf.argmax(prediction, axis=1)[0]
-    class_label = list(train_generator.class_indices.keys())[class_index]
 
-    return class_label
-import os
+    # Define class labels based on your model's output classes
+    class_labels = ['paper_waste', 'plastic_waste', 'metal_waste']
+    class_label = class_labels[class_index]
 
-image_path_to_test = "C:\\Users\\Windownet\\Desktop\\test1.jpg"
+    # Adjust the predicted class based on your requirements
+    if class_label == 'metal_waste':
+        adjusted_class_label = 'plastic_waste'  # Map metal to plastic
+    elif class_label == 'plastic_waste':
+        adjusted_class_label = 'paper_waste'    # Map plastic to paper
+    elif class_label == 'paper_waste':
+        adjusted_class_label = 'metal_waste'     # Map paper to metal
+    else:
+        adjusted_class_label = class_label  # Default to the original label
 
-if os.path.exists(image_path_to_test):
-    predicted_class = classify_image(image_path_to_test)
-    print(f"The predicted class is: {predicted_class}")
-else:
-    print(f"Error: The file '{image_path_to_test}' does not exist.")
+    return adjusted_class_label
 
-# Test with an Image
+# Function to map the predicted class to the servo angle
+def map_predicted_class_to_servo_angle(predicted_class):
+    if predicted_class == 'paper_waste':
+        return 110
+    elif predicted_class == 'plastic_waste':
+        return 140
+    elif predicted_class == 'metal_waste':
+        return 180
+    else:
+        return 90  # Default angle for other classes
+
+# Function to send angle to Arduino
+def send_angle_to_arduino(angle):
+    try:
+        ser = serial.Serial('COM10', 9600)  # Replace 'COM10' with the appropriate serial port
+        time.sleep(2)  # Wait for serial communication to be established
+        ser.write(str(angle).encode())
+        ser.close()
+    except Exception as e:
+        print(f"Error communicating with Arduino: {e}")
+
+# Path of the image to test
+image_path_to_test = r"C:/Users/mustapha/Desktop/santa/plastic_waste/00000000.jpg"
+
+# Classification of the image
 predicted_class = classify_image(image_path_to_test)
 print(f"The predicted class is: {predicted_class}")
+
+# Map the class to the servo angle
+angle_to_send = map_predicted_class_to_servo_angle(predicted_class)
+
+# Send the angle to Arduino
+send_angle_to_arduino(angle_to_send)
