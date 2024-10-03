@@ -60,7 +60,7 @@ def send_angle_to_arduino(angle):
         print(f"Error communicating with Arduino: {e}")
 
 # Path of the image to test
-image_path_to_test = r"C:/Users/mustapha/Desktop/santa/plastic_waste/00000000.jpg"
+image_path_to_test = r"C:/Users/windownet/Desktop/santa/plastic_waste/00000000.jpg"
 
 # Classification of the image
 predicted_class = classify_image(image_path_to_test)
